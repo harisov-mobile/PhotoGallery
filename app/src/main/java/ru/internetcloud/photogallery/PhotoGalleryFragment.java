@@ -28,6 +28,7 @@ public class PhotoGalleryFragment extends Fragment {
     private RecyclerView photo_recycler_view;
     private List<GalleryItem> galleryItemList = new ArrayList<>();
     private PhotoAdapter photoAdapter;
+    private ThumbnailDownloader<PhotoViewHolder> thumbnailDownloader;
 
     public static PhotoGalleryFragment newInstance() {
         return new PhotoGalleryFragment();
@@ -40,7 +41,12 @@ public class PhotoGalleryFragment extends Fragment {
         setRetainInstance(true); // удерживаем фрагмент
         // причина удержания: чтобы поворот не приводил к многократному порождению новых объектов AsyncTask для загрузки данных JSON
 
-        new FetchItemsTask().execute();
+        new FetchItemsTask().execute(); // cкачиваем JSON c адресами url, и в список (List)
+
+        thumbnailDownloader = new ThumbnailDownloader<>();
+        thumbnailDownloader.start();
+        thumbnailDownloader.getLooper();
+        Log.i(TAG, "Background thread started");
     }
 
     @Override
@@ -67,6 +73,14 @@ public class PhotoGalleryFragment extends Fragment {
 //            photoAdapter.setGalleryItemList(galleryItemList);
 //            photoAdapter.notifyDataSetChanged();
 //        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        thumbnailDownloader.quit(); // обязательно надо завершать поток, иначе он никогда не умрет!
+        Log.i(TAG, "Background thread destroyed");
     }
 
     // внутренний класс FetchItemsTask
@@ -131,7 +145,11 @@ public class PhotoGalleryFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull PhotoViewHolder holder, int position) {
 
-            holder.bindTempDrawable(drawable);
+            holder.bindTempDrawable(drawable); // временную картинку вывожу, белый квадратик с рамкой, пока не будет загружена иконка соответствующей фотографии.
+
+            GalleryItem currentGalleryItem = galleryItemList.get(position);
+            thumbnailDownloader.queueThumbnail(holder, currentGalleryItem.getIconUrl());
+
             //holder.bind(galleryItems.get(position));
         }
 
