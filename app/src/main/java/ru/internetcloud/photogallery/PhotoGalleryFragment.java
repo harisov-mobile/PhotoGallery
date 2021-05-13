@@ -1,8 +1,11 @@
 package ru.internetcloud.photogallery;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,9 +46,21 @@ public class PhotoGalleryFragment extends Fragment {
 
         new FetchItemsTask().execute(); // cкачиваем JSON c адресами url, и в список (List)
 
-        thumbnailDownloader = new ThumbnailDownloader<>();
+        Handler mainThreadHandler = new Handler();
+
+        thumbnailDownloader = new ThumbnailDownloader<>(mainThreadHandler); // передаю в фоновый поток обработчик из главного потока.
+        thumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoViewHolder>() {
+            @Override
+            public void onThumbnailDownloaded(PhotoViewHolder holder, Bitmap thumbnail) {
+                Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
+                holder.bindDrawable(drawable); // правильную иконку вывожу.
+            }
+        });
+
+
         thumbnailDownloader.start();
         thumbnailDownloader.getLooper();
+
         Log.i(TAG, "Background thread started");
     }
 
@@ -73,6 +88,12 @@ public class PhotoGalleryFragment extends Fragment {
 //            photoAdapter.setGalleryItemList(galleryItemList);
 //            photoAdapter.notifyDataSetChanged();
 //        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        thumbnailDownloader.clearQueue();
     }
 
     @Override
@@ -114,7 +135,7 @@ public class PhotoGalleryFragment extends Fragment {
             item_image_view = itemView.findViewById(R.id.item_image_view);
         }
 
-        private void bindTempDrawable(Drawable drawable) {
+        private void bindDrawable(Drawable drawable) {
             item_image_view.setImageDrawable(drawable);
         }
 
@@ -127,7 +148,7 @@ public class PhotoGalleryFragment extends Fragment {
     private class PhotoAdapter extends RecyclerView.Adapter<PhotoViewHolder> {
 
         private List<GalleryItem> galleryItemList;
-        Drawable drawable = getResources().getDrawable(R.drawable.temp_picture); // временное пустое изображение (квадратик), потом на его место реальная иконка загрузится.
+        Drawable tempDrawable = getResources().getDrawable(R.drawable.temp_picture); // временное пустое изображение (квадратик), потом на его место реальная иконка загрузится.
 
         public PhotoAdapter(List<GalleryItem> galleryItemList) {
             this.galleryItemList = galleryItemList;
@@ -145,7 +166,7 @@ public class PhotoGalleryFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull PhotoViewHolder holder, int position) {
 
-            holder.bindTempDrawable(drawable); // временную картинку вывожу, белый квадратик с рамкой, пока не будет загружена иконка соответствующей фотографии.
+            holder.bindDrawable(tempDrawable); // временную картинку вывожу, белый квадратик с рамкой, пока не будет загружена иконка соответствующей фотографии.
 
             GalleryItem currentGalleryItem = galleryItemList.get(position);
             thumbnailDownloader.queueThumbnail(holder, currentGalleryItem.getIconUrl());
