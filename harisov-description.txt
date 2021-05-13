@@ -1,0 +1,29 @@
+PhotoGallery:
+
+- удерживаем фрагмент PhotoGalleryFragment при повороте: setRetainInstance(true);
+  причина удержания: чтобы поворот не приводил к многократному порождению новых объектов AsyncTask для загрузки данных JSON
+
+- используем GridLayoutManager, чтобы в три столбца показывать фотографии:
+  photo_recycler_view.setLayoutManager(new GridLayoutManager(getActivity(), 3));
+
+- получаем из URL массив байтов (порциями по 1024 байт, потом объединяем в единый массив байтов)
+
+- в манифесте указано разрешение на работу с интернет:
+  <uses-permission android:name="android.permission.INTERNET" />
+
+- получаем строку из массива байтов: new String(getUrlBytes(urlAddress));
+
+- https://www.flickr.com:  зарегистрирован на временную почту: dizgif@bitcoinportal.org: пароль: Androidtestandroid1+
+
+- Key:
+  58d2f9ef49b1a0cae04abc39243b7e18
+
+  Secret:
+  a8d254b74047d0e0
+
+- фоновым потокам запрещается обновлять пользовательский интерфейс, поскольку такие операции явно небезопасны.
+  общение между фоновым потоком и главным потоком идет через
+
+- при отображении RecyclerView сначала показывается "temp_picture" (пустой квадратик с рамкой)
+
+
