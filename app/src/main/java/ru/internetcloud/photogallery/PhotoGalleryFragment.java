@@ -44,7 +44,7 @@ public class PhotoGalleryFragment extends Fragment {
         setRetainInstance(true); // удерживаем фрагмент
         // причина удержания: чтобы поворот не приводил к многократному порождению новых объектов AsyncTask для загрузки данных JSON
 
-        new FetchItemsTask().execute(); // cкачиваем JSON c адресами url, и в список (List)
+        new FetchItemsTask().execute(); // cкачиваем JSON c адресами url, и в список (List) - одноразовый фоновый поток.
 
         Handler mainThreadHandler = new Handler();
 

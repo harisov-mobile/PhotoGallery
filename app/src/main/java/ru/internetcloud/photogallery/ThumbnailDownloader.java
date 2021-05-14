@@ -37,6 +37,7 @@ public class ThumbnailDownloader<T> extends HandlerThread {
         hasQuit = true;
         return super.quit();
     }
+
     public void queueThumbnail(T holder, String urlAddress) {
         Log.i(TAG, "Got a URL: " + urlAddress);
 
@@ -44,7 +45,7 @@ public class ThumbnailDownloader<T> extends HandlerThread {
             requestMap.remove(holder);
         } else {
             requestMap.put(holder, urlAddress); // с каждым holder связываем url-адрес на загрузку иконки.
-            requestHandler.obtainMessage(MESSAGE_DOWNLOAD, holder).sendToTarget(); // создается сообщение и передается обработчику (мвязывается с обработчиком)
+            requestHandler.obtainMessage(MESSAGE_DOWNLOAD, holder).sendToTarget(); // создается сообщение и передается обработчику (связывается с обработчиком)
         }
     }
 
