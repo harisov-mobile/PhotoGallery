@@ -26,4 +26,21 @@ PhotoGallery:
 
 - при отображении RecyclerView сначала показывается "temp_picture" (пустой квадратик с рамкой)
 
+- библиотека Picasso для загрузки изображений: можно сделать все одной командой:
+    public void bindGalleryItem(GalleryItem galleryItem) {
+        Picasso.with(getActivity())
+            .load(galleryItem.getUrl())
+            .placeholder(R.drawable.bill_up_close)
+            .into(mItemImageView);
+    }
+  другие библиотеки: для загрузки анимированных изображений можно использовать: Google Glide или библиотеку Facebook Fresco. Из этих двух библи-
+                                                                                отек Glide занимает меньше памяти, а Fresco обладает лучшим быстродействием
 
+- используется SearchView для поиска, сокрытие клавиатуры при окончании ввода поиска: 2 способа скрыть клавиатуру.
+
+- сохранение настроек: SharedPreferences
+
+-
+
+ВОПРОСЫ:
+1) Как программно узнать, какой размер экрана, и размер иконки фото выставить в соответствии с шириной экрана?

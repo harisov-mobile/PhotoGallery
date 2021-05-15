@@ -22,6 +22,17 @@ public class FlickrFetchr {
     private static final String TAG = "rustam";
     private static final String API_KEY = "58d2f9ef49b1a0cae04abc39243b7e18";
 
+    private static final String FETCH_RECENTS_METHOD = "flickr.photos.getRecent";
+    private static final String SEARCH_METHOD = "flickr.photos.search";
+    private static final Uri ENDPOINT = Uri
+            .parse("https://api.flickr.com/services/rest/")
+            .buildUpon()
+            .appendQueryParameter("api_key", API_KEY)
+            .appendQueryParameter("format", "json")
+            .appendQueryParameter("nojsoncallback", "1")
+            .appendQueryParameter("extras", "url_s,url_l")
+            .build();
+
     public byte[] getUrlBytes(String urlAddress) throws IOException {
 
         URL url = new URL(urlAddress);
@@ -55,25 +66,25 @@ public class FlickrFetchr {
         return new String(getUrlBytes(urlAddress));
     }
 
-    public List<GalleryItem> fetchItems() {
+    public List<GalleryItem> downloadGalleryItems(String urlAddress) {
 
         List<GalleryItem> items = new ArrayList<>();
 
         try {
             // https://www.flickr.com/services/api/ - описание API
 
-            String urlAddress = Uri.parse("https://api.flickr.com/services/rest/")
-                    .buildUpon()
-                    .appendQueryParameter("method", "flickr.photos.getRecent")
-                    .appendQueryParameter("api_key", API_KEY)
-                    .appendQueryParameter("format", "json")
-                    .appendQueryParameter("nojsoncallback", "1")
-                    //.appendQueryParameter("per_page", "500") 500 скачать 500 фото
-                    //.appendQueryParameter("extras", "url_s")
-                    .appendQueryParameter("extras", "url_s,url_l")
-                    // url_l - ссылка на фото большого размера
-                    // url_s - ссылка на фото маленького размера
-                    .build().toString();
+//            String urlAddress = Uri.parse("https://api.flickr.com/services/rest/")
+//                    .buildUpon()
+//                    .appendQueryParameter("method", "flickr.photos.getRecent")
+//                    .appendQueryParameter("api_key", API_KEY)
+//                    .appendQueryParameter("format", "json")
+//                    .appendQueryParameter("nojsoncallback", "1")
+//                    //.appendQueryParameter("per_page", "500") 500 скачать 500 фото
+//                    //.appendQueryParameter("extras", "url_s")
+//                    .appendQueryParameter("extras", "url_s,url_l")
+//                    // url_l - ссылка на фото большого размера
+//                    // url_s - ссылка на фото маленького размера
+//                    .build().toString();
 
             String jsonString = getUrlString(urlAddress);
             //Log.i(TAG, "JSON = " + jsonString);
@@ -119,5 +130,22 @@ public class FlickrFetchr {
                 return o2.getId().compareTo(o1.getId());
             }
         });
+    }
+
+    private String buildUrl(String method, String query) {
+        Uri.Builder uriBuilder = ENDPOINT.buildUpon().appendQueryParameter("method", method);
+        if (method.equals(SEARCH_METHOD)) {
+            uriBuilder.appendQueryParameter("text", query);
+        }
+        return uriBuilder.build().toString();
+    }
+
+    public List<GalleryItem> fetchRecentPhotos() {
+        String url = buildUrl(FETCH_RECENTS_METHOD, null);
+        return downloadGalleryItems(url);
+    }
+    public List<GalleryItem> searchPhotos(String query) {
+        String url = buildUrl(SEARCH_METHOD, query);
+        return downloadGalleryItems(url);
     }
 }

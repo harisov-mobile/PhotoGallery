@@ -1,5 +1,7 @@
 package ru.internetcloud.photogallery;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -8,9 +10,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
+import android.widget.SearchView;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -19,10 +26,14 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import static android.content.Context.INPUT_METHOD_SERVICE;
+import static androidx.core.content.ContextCompat.getSystemService;
 
 public class PhotoGalleryFragment extends Fragment {
 
@@ -32,6 +43,8 @@ public class PhotoGalleryFragment extends Fragment {
     private List<GalleryItem> galleryItemList = new ArrayList<>();
     private PhotoAdapter photoAdapter;
     private ThumbnailDownloader<PhotoViewHolder> thumbnailDownloader;
+
+    SearchView searchView = null;
 
     public static PhotoGalleryFragment newInstance() {
         return new PhotoGalleryFragment();
@@ -44,7 +57,12 @@ public class PhotoGalleryFragment extends Fragment {
         setRetainInstance(true); // удерживаем фрагмент
         // причина удержания: чтобы поворот не приводил к многократному порождению новых объектов AsyncTask для загрузки данных JSON
 
-        new FetchItemsTask().execute(); // cкачиваем JSON c адресами url, и в список (List) - одноразовый фоновый поток.
+        setHasOptionsMenu(true); // меню
+
+        updateItems(); // cкачиваем JSON c адресами url, и в список (List) - одноразовый фоновый поток.
+
+        Intent intent = PollService.newIntent(getActivity());
+        getActivity().startService(intent);
 
         Handler mainThreadHandler = new Handler();
 
@@ -91,6 +109,82 @@ public class PhotoGalleryFragment extends Fragment {
     }
 
     @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.fragment_photo_gallery_menu, menu);
+
+        MenuItem searchItem = menu.findItem(R.id.menu_item_search);
+
+        searchView = (SearchView) searchItem.getActionView();
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                QueryPreferences.setStoredQuery(getActivity().getApplicationContext(), query);
+
+                // скрыть клавиатуру: 2 способа
+                // статья https://rmirabelle.medium.com/close-hide-the-soft-keyboard-in-android-db1da22b09d2
+//                InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+//                inputMethodManager.hideSoftInputFromWindow(searchView.getWindowToken(), 0);
+
+                searchView.clearFocus(); // второй способ скрыть клавиатуру
+
+                searchView.onActionViewCollapsed(); // скрывает SearchView
+
+                updateItems();
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+
+        searchView.setOnSearchClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                String query = QueryPreferences.getStoredQuery(getActivity().getApplicationContext());
+                searchView.setQuery(query, false);
+            }
+        });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_item_clear:
+                QueryPreferences.setStoredQuery(getActivity().getApplicationContext(), null);
+
+                if (searchView != null) {
+                    searchView.onActionViewCollapsed(); // скрывает SearchView
+                }
+
+                updateItems();
+
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void updateItems() {
+        String query = QueryPreferences.getStoredQuery(getActivity().getApplicationContext());
+
+        String subtitle = "";
+        if (query != null) {
+            subtitle = "" + getResources().getString(R.string.search) + ": " + query;
+        }
+
+        AppCompatActivity currentActivity = (AppCompatActivity) getActivity();
+        currentActivity.getSupportActionBar().setSubtitle(subtitle);
+
+
+        new FetchItemsTask(query).execute(); // cкачиваем JSON c адресами url, и в список (List) - одноразовый фоновый поток.
+    }
+
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
         thumbnailDownloader.clearQueue();
@@ -109,9 +203,21 @@ public class PhotoGalleryFragment extends Fragment {
 
         // третий параметр определяет тип результата, производимого AsyncTask ; он задает тип значения, возвращаемого doInBackground(…) , а также тип входного параметра onPostExecute(…)
 
+        private String query;
+
+        // конструктор:
+        public FetchItemsTask(String query) {
+            this.query = query;
+        }
+
         @Override
         protected List<GalleryItem> doInBackground(Void... params) {
-            return new FlickrFetchr().fetchItems();
+
+            if (query == null) {
+                return new FlickrFetchr().fetchRecentPhotos();
+            } else {
+                return new FlickrFetchr().searchPhotos(query);
+            }
         }
 
         @Override

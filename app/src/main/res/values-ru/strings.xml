@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhotoGallery</string>
+    <string name="search">Поиск</string>
+    <string name="clear_search">Очистить поиск</string>
+</resources>
