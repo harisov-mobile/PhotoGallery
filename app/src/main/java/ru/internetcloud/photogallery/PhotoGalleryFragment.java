@@ -61,9 +61,6 @@ public class PhotoGalleryFragment extends Fragment {
 
         updateItems(); // cкачиваем JSON c адресами url, и в список (List) - одноразовый фоновый поток.
 
-        Intent intent = PollService.newIntent(getActivity());
-        getActivity().startService(intent);
-
         Handler mainThreadHandler = new Handler();
 
         thumbnailDownloader = new ThumbnailDownloader<>(mainThreadHandler); // передаю в фоновый поток обработчик из главного потока.
@@ -113,6 +110,13 @@ public class PhotoGalleryFragment extends Fragment {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.fragment_photo_gallery_menu, menu);
 
+        MenuItem toggleItem = menu.findItem(R.id.menu_item_toggle_polling);
+        if (PollService.isServiceAlarmOn(getActivity())) {
+            toggleItem.setTitle(R.string.stop_polling);
+        } else {
+            toggleItem.setTitle(R.string.start_polling);
+        }
+
         MenuItem searchItem = menu.findItem(R.id.menu_item_search);
 
         searchView = (SearchView) searchItem.getActionView();
@@ -156,14 +160,18 @@ public class PhotoGalleryFragment extends Fragment {
         switch (item.getItemId()) {
             case R.id.menu_item_clear:
                 QueryPreferences.setStoredQuery(getActivity().getApplicationContext(), null);
-
                 if (searchView != null) {
                     searchView.onActionViewCollapsed(); // скрывает SearchView
                 }
-
                 updateItems();
-
                 return true;
+
+            case R.id.menu_item_toggle_polling:
+                boolean shouldStartAlarm = !PollService.isServiceAlarmOn(getActivity());
+                PollService.setServiceAlarm(getActivity(), shouldStartAlarm);
+                getActivity().invalidateOptionsMenu();
+                return true;
+
             default:
                 return super.onOptionsItemSelected(item);
         }

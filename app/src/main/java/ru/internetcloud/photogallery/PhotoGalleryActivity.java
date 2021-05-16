@@ -1,20 +1,24 @@
 package ru.internetcloud.photogallery;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+
 import androidx.fragment.app.Fragment;
 
-import android.content.Context;
-import android.os.Bundle;
-import android.util.AttributeSet;
-import android.view.View;
-
 public class PhotoGalleryActivity extends TemplateFragmentActivity {
+
+    public static Intent newIntent(Context context) {
+        return new Intent(context, PhotoGalleryActivity.class);
+    }
 
     @Override
     protected Fragment createFragment() {
         return PhotoGalleryFragment.newInstance();
     }
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
 }
