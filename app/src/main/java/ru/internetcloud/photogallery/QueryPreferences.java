@@ -8,6 +8,7 @@ public class QueryPreferences {
     private static final String PREF_SEARCH_QUERY = "searchQuery";
     private static final String PREF_LAST_RESULT_ID = "lastResultId";
     private static final String PREF_IS_ALARM_ON = "isAlarmOn";
+    private static final String PREF_SHOW_PHOTO_IN = "showPhotoIn";
 
     public static String getStoredQuery(Context contex) {
         return PreferenceManager.getDefaultSharedPreferences(contex).getString(PREF_SEARCH_QUERY, null);
@@ -43,4 +44,17 @@ public class QueryPreferences {
                 .putBoolean(PREF_IS_ALARM_ON, isOn)
                 .apply();
     }
+
+    public static void setShowPhotoIn(Context context, String showPhotoIn) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putString(PREF_SHOW_PHOTO_IN, showPhotoIn)
+                .apply();
+    }
+
+    public static String getShowPhotoIn(Context contex) {
+        return PreferenceManager.getDefaultSharedPreferences(contex).getString(PREF_SHOW_PHOTO_IN, null);
+    }
+
+
 }

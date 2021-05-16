@@ -19,6 +19,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,6 +44,8 @@ public class PhotoGalleryFragment extends Fragment {
     private List<GalleryItem> galleryItemList = new ArrayList<>();
     private PhotoAdapter photoAdapter;
     private ThumbnailDownloader<PhotoViewHolder> thumbnailDownloader;
+
+    private String showPhotoIn;
 
     SearchView searchView = null;
 
@@ -172,6 +175,9 @@ public class PhotoGalleryFragment extends Fragment {
                 getActivity().invalidateOptionsMenu();
                 return true;
 
+            case R.id.menu_item_settings:
+                Intent intent = SettingsActivity.newIntent(getActivity());
+                startActivity(intent);
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -190,6 +196,13 @@ public class PhotoGalleryFragment extends Fragment {
 
 
         new FetchItemsTask(query).execute(); // cкачиваем JSON c адресами url, и в список (List) - одноразовый фоновый поток.
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        showPhotoIn = QueryPreferences.getShowPhotoIn(getActivity().getApplicationContext());
     }
 
     @Override
@@ -237,16 +250,17 @@ public class PhotoGalleryFragment extends Fragment {
     }
 
     // внутренний класс PhotoViewHolder
-    private class PhotoViewHolder extends RecyclerView.ViewHolder {
+    private class PhotoViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         private GalleryItem galleryItem; // ???
-        //private TextView name_text_view;
         private ImageView item_image_view;
 
         public PhotoViewHolder(@NonNull View itemView) {
             super(itemView);
 
             item_image_view = itemView.findViewById(R.id.item_image_view);
+
+            itemView.setOnClickListener(this);
         }
 
         private void bindDrawable(Drawable drawable) {
@@ -254,7 +268,30 @@ public class PhotoGalleryFragment extends Fragment {
         }
 
         private void bind(GalleryItem item) {
-            //this.galleryItem = item;
+            this.galleryItem = item;
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (showPhotoIn == null ) {
+                Toast.makeText(getActivity(), "default", Toast.LENGTH_SHORT).show();
+            } else {
+                switch (showPhotoIn) {
+                    case "browser":
+                        Intent intentBrowser = new Intent(Intent.ACTION_VIEW, galleryItem.getPhotoPageUri());
+                        startActivity(intentBrowser);
+                        return;
+
+                    case "web view":
+                        Intent intentWebView = PhotoPageActivity.newIntent(getActivity(), galleryItem.getPhotoPageUri());
+                        startActivity(intentWebView);
+                        return;
+
+                    default:
+
+                        return;
+                }
+            }
         }
     }
 
@@ -280,12 +317,13 @@ public class PhotoGalleryFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull PhotoViewHolder holder, int position) {
 
+            holder.bind(galleryItemList.get(position));
             holder.bindDrawable(tempDrawable); // временную картинку вывожу, белый квадратик с рамкой, пока не будет загружена иконка соответствующей фотографии.
 
             GalleryItem currentGalleryItem = galleryItemList.get(position);
             thumbnailDownloader.queueThumbnail(holder, currentGalleryItem.getIconUrl());
 
-            //holder.bind(galleryItems.get(position));
+
         }
 
         @Override

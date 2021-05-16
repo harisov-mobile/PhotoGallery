@@ -3,4 +3,10 @@
     <string name="app_name">PhotoGallery</string>
     <string name="search">Поиск</string>
     <string name="clear_search">Очистить поиск</string>
+    <string name="start_polling">Начать опрос</string>
+    <string name="stop_polling">Закончить опрос</string>
+    <string name="new_pictures_text">Появились новые фото в Фотогалерее.</string>
+    <string name="settings">Настройки</string>
+    <string name="new_pictures_title">Новые фото</string>
+    <string name="label_show_photo_in">Показать фото в</string>
 </resources>
